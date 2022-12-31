@@ -5,6 +5,7 @@ import 'package:go_rest_bloc/models/user_model.dart';
 import 'package:go_rest_bloc/utils/constants.dart';
 import 'package:go_rest_bloc/utils/log_utils.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 
 class PostRepository {
   final String baseURL = MyConstants.baseURL;
@@ -46,18 +47,23 @@ class PostRepository {
   }
 
   // create user
-  Future<void> createUserPost(PostModel postModel, UserModel userModel) async {
-    final response = await http.post(
-      Uri.parse("$baseURL/users/${userModel.id}/posts"),
-      headers: MyConstants.headers,
-      body: {"user_id": userModel.id, "title": postModel.title, "body": postModel.body},
-    );
-    LogUtil.verbose('CREATE USER API : ${response.statusCode}');
-    if (response.statusCode == 201) {
-      print('User created');
-    } else {
-      throw Exception('Failed to create user');
+  Future<PostModel> createUserPost(PostModel postModel) async {
+    try {
+      final Response response = await http.post(
+        Uri.parse("$baseURL/users/${postModel.userId.toString()}/posts"),
+        headers: MyConstants.headers,
+        body: {"user_id": postModel.userId.toString(), "title": postModel.title, "body": postModel.body},
+      );
+      LogUtil.verbose('CREATE USER API : ${response.statusCode}');
+      if (response.statusCode == 201) {
+        return postModelFromJson(response.body);
+      } else {
+        throw Exception('Failed to create post');
+      }
+    } catch (e) {
+      LogUtil.error(e);
     }
+    return postModel;
   }
 
   // post comments
@@ -70,7 +76,7 @@ class PostRepository {
     if (response.statusCode == 201) {
       print('User created');
     } else {
-      throw Exception('Failed to create user');
+      throw Exception('Failed to create post comment');
     }
   }
 }

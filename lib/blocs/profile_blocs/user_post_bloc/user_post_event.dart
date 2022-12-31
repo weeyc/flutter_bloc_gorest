@@ -10,3 +10,10 @@ class ProfilePostsFetchEvent extends UserPostEvent {
   @override
   List<Object> get props => [userModel];
 }
+
+class ProfileCreatePostEvent extends UserPostEvent {
+  const ProfileCreatePostEvent(this.postModel);
+  final PostModel postModel;
+  @override
+  List<Object> get props => [postModel];
+}

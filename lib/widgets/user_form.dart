@@ -12,6 +12,7 @@ class UserForm extends StatelessWidget {
     this.onPressed,
     required this.formLabel,
     this.isEditing = false,
+    required this.formKey,
   }) : super(key: key);
 
   final TextEditingController nameController;
@@ -21,24 +22,40 @@ class UserForm extends StatelessWidget {
   final void Function()? onPressed;
   final String formLabel;
   final bool isEditing;
+  final Key formKey;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       child: Form(
+        key: formKey,
         child: ListView(
-          padding: EdgeInsets.only(top: 10, left: 16, right: 16, bottom: MediaQuery.of(context).viewInsets.bottom + 16),
+          padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
           children: [
             Text(formLabel, style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
-            TextField(
+            TextFormField(
               decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Name'),
               controller: nameController,
+              validator: (value) {
+                if (value == null || value.isEmpty || value.trim().isEmpty) {
+                  return 'Please enter name';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
-            TextField(
+            TextFormField(
               decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Email'),
               controller: emailController,
+              validator: (value) {
+                if (value == null || value.isEmpty || value.trim().isEmpty) {
+                  return 'Please enter email';
+                } else if (!RegExp(r'^.+@[a-zA-Z]+\.{1}[a-zA-Z]+(\.{0,1}[a-zA-Z]+)$').hasMatch(value)) {
+                  return 'Please enter valid email';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 20),
             TextField(

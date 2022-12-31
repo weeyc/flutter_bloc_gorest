@@ -15,6 +15,13 @@ class ProfilePostLoadingState extends UserPostState {
   List<Object> get props => [];
 }
 
+class ProfilePostCreatedState extends UserPostState {
+  const ProfilePostCreatedState(this.post);
+  final PostModel post;
+  @override
+  List<Object> get props => [post];
+}
+
 class ProfilePostLoadedState extends UserPostState {
   const ProfilePostLoadedState(this.posts);
   final List<PostModel> posts;

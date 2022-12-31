@@ -4,9 +4,11 @@ import 'package:go_rest_bloc/blocs/profile_blocs/user_info_bloc/user_profile_blo
 import 'package:go_rest_bloc/blocs/profile_blocs/user_post_bloc/user_post_bloc.dart';
 import 'package:go_rest_bloc/blocs/profile_blocs/user_todo_bloc/user_todo_bloc.dart';
 import 'package:go_rest_bloc/blocs/user_bloc/user_bloc.dart';
+import 'package:go_rest_bloc/models/post_model.dart';
 import 'package:go_rest_bloc/models/user_model.dart';
 import 'package:go_rest_bloc/utils/log_utils.dart';
 import 'package:go_rest_bloc/widgets/card.dart';
+import 'package:go_rest_bloc/widgets/post_form.dart';
 import 'package:go_rest_bloc/widgets/post_tiles.dart';
 import 'package:go_rest_bloc/widgets/todo_tile.dart';
 import 'package:go_rest_bloc/widgets/user_form.dart';
@@ -23,194 +25,212 @@ class UserProfile extends StatelessWidget {
     UserBloc userBloc = BlocProvider.of<UserBloc>(context);
     return Scaffold(
       appBar: AppBar(title: const Text('User Profile')),
-      body: BlocListener<UserProfileBloc, UserProfileState>(
-        bloc: userProfileBloc,
-        listener: (userProfileContext, state) {
-          // After User profile edited
-          if (state is UserProfileEditedState) {
-            // refresh users list from previous page
-            userBloc.add(UsersFetchEvent());
-            ScaffoldMessenger.of(userProfileContext).showSnackBar(
-              const SnackBar(content: Text('User information edited successfully'), backgroundColor: Colors.green),
-            );
-          }
-          // After User profile deleted
-          else if (state is UserProfileDeletedState) {
-            ScaffoldMessenger.of(userProfileContext).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-            // refresh users list from previous page and pop current page
-            userBloc.add(UsersFetchEvent());
-            Navigator.of(context).pop();
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Row(
+            children: [
+              const Text('USER INFORMATION'),
+              const Spacer(),
+              BlocConsumer<UserProfileBloc, UserProfileState>(
+                bloc: userProfileBloc,
+                listener: (userProfileContext, state) {
+                  if (state is UserProfileEditedState) {
+                    // refresh users list from previous page
+                    userBloc.add(UsersFetchEvent());
+                    ScaffoldMessenger.of(userProfileContext).showSnackBar(
+                      const SnackBar(content: Text('User information edited successfully'), backgroundColor: Colors.green),
+                    );
+                  }
+                  // After User profile deleted
+                  else if (state is UserProfileDeletedState) {
+                    ScaffoldMessenger.of(userProfileContext).showSnackBar(
+                      SnackBar(content: Text(state.message)),
+                    );
+                    // refresh users list from previous page and pop current page
+                    userBloc.add(UsersFetchEvent());
+                    Navigator.of(context).pop();
 
-            // After Error occurred
-          } else if (state is UserProfileErrorState) {
-            if (userModel?.id != null) {
-              userProfileBloc.add(UserProfileFetchEvent(userModel!));
-            }
-            ScaffoldMessenger.of(userProfileContext).showSnackBar(
-              const SnackBar(content: Text('Something Went Wrong!'), backgroundColor: Colors.red),
-            );
-          }
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Row(
-              children: [
-                const Text('USER INFORMATION'),
-                const Spacer(),
-                BlocBuilder<UserProfileBloc, UserProfileState>(
-                  bloc: userProfileBloc,
-                  builder: (context, state) {
-                    if (state is UserProfileLoadedState) {
-                      return Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => _editDialog(context, userProfileBloc, state.userModel),
-                            icon: const Icon(Icons.edit, color: Colors.green),
-                            splashRadius: 14,
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: () => _deleteDialog(context, userProfileBloc, state.userModel),
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            splashRadius: 14,
-                          ),
-                        ],
-                      );
-                    } else {
-                      return IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.delete, color: Colors.transparent),
-                        splashRadius: 14,
-                      );
+                    // After Error occurred
+                  } else if (state is UserProfileErrorState) {
+                    if (userModel?.id != null) {
+                      userProfileBloc.add(UserProfileFetchEvent(userModel!));
                     }
+                    ScaffoldMessenger.of(userProfileContext).showSnackBar(
+                      const SnackBar(content: Text('Something Went Wrong!'), backgroundColor: Colors.red),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  if (state is UserProfileLoadedState) {
+                    return Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => _editDialog(context, userProfileBloc, state.userModel),
+                          icon: const Icon(Icons.edit, color: Colors.green),
+                          splashRadius: 14,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => _deleteDialog(context, userProfileBloc, state.userModel),
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          splashRadius: 14,
+                        ),
+                      ],
+                    );
+                  } else {
+                    return IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.delete, color: Colors.transparent),
+                      splashRadius: 14,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+
+          /// USER INFORMATION
+          const SizedBox(height: 5),
+          BlocBuilder<UserProfileBloc, UserProfileState>(
+            bloc: userProfileBloc,
+            // listener: (context, state) {
+            //   if (state is UserProfileErrorState) {
+            //     if (userModel?.id != null) {
+            //       userProfileBloc.add(UserProfileFetchEvent(userModel!));
+            //     }
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       const SnackBar(content: Text('Something Went Wrong!'), backgroundColor: Colors.red),
+            //     );
+            //   }else if (state is ProfilePostCreatedState) {
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       const SnackBar(content: Text('Post Created Successfully')),
+            //     );
+            //   }
+            // },
+            builder: (context, state) {
+              if (state is UserProfileInitialState) {
+                return ProfileCard(userModel: state.userModel);
+              } else if (state is UserProfileLoadedState) {
+                return ProfileCard(userModel: state.userModel);
+              } else if (state is UserProfileLoadingState) {
+                return const ProfileCardLoading();
+              } else if (state is UserProfileErrorState) {
+                return Container();
+              } else {
+                LogUtil.verbose('User Info: Unknown state');
+                return Container();
+              }
+            },
+          ),
+          const SizedBox(height: 40),
+          Row(
+            children: [
+              const Text('USER POSTS'),
+              const Spacer(),
+              IconButton(
+                onPressed: () => _createPostDialog(context, userPostBloc, userModel ?? UserModel()),
+                icon: const Icon(Icons.add, color: Colors.green),
+                splashRadius: 14,
+              ),
+            ],
+          ),
+
+          /// USER POSTS
+          const SizedBox(height: 20),
+          BlocConsumer<UserPostBloc, UserPostState>(
+            bloc: userPostBloc,
+            listener: (context, state) {
+              if (state is ProfilePostCreatedState) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Post Created Successfully'), backgroundColor: Colors.green),
+                );
+              } else if (state is ProfilePostErrorState) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Something Went Wrong!'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            builder: (context, state) {
+              if (state is ProfilePostLoadedState) {
+                return ListView.builder(
+                  itemCount: state.posts.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return PostTiles(
+                      id: state.posts[index].id.toString(),
+                      title: state.posts[index].title ?? '',
+                      body: state.posts[index].body ?? '',
+                    );
                   },
-                ),
-              ],
-            ),
-            const SizedBox(height: 5),
-            BlocBuilder<UserProfileBloc, UserProfileState>(
-              bloc: userProfileBloc,
-              builder: (context, state) {
-                if (state is UserProfileInitialState) {
-                  return ProfileCard(userModel: state.userModel);
-                } else if (state is UserProfileLoadedState) {
-                  return ProfileCard(userModel: state.userModel);
-                } else if (state is UserProfileLoadingState) {
-                  return const ProfileCardLoading();
-                } else if (state is UserProfileErrorState) {
-                  return Container();
-                } else {
-                  LogUtil.verbose('UserProfile: Unknown state');
-                  return Container();
-                }
-              },
-            ),
-            const SizedBox(height: 40),
-            Row(
-              children: [
-                const Text('USER POSTS'),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, color: Colors.green),
-                  splashRadius: 14,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            BlocBuilder<UserPostBloc, UserPostState>(
-              bloc: userPostBloc,
-              builder: (context, state) {
-                if (state is ProfilePostLoadedState) {
-                  return ListView.builder(
-                    itemCount: state.posts.length,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      return PostTiles(
-                        id: state.posts[index].id.toString(),
-                        title: state.posts[index].title ?? '',
-                        body: state.posts[index].body ?? '',
-                      );
-                    },
-                  );
-                } else if (state is ProfilePostLoadingState) {
-                  return const SizedBox(
-                    height: 150,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                } else if (state is ProfilePostEmptyState) {
-                  return const SizedBox(
-                    height: 50,
-                    child: Center(child: Text('This user has no post')),
-                  );
-                } else if (state is UserProfileErrorState) {
-                  return Container();
-                } else {
-                  LogUtil.verbose('UserProfile: Unknown state');
-                  return Container();
-                }
-              },
-            ),
-            const SizedBox(height: 40),
-            Row(
-              children: [
-                const Text('USER TODO LIST'),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, color: Colors.green),
-                  splashRadius: 14,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            BlocBuilder<UserTodoBloc, UserTodoState>(
-              bloc: userTodoBloc,
-              builder: (context, state) {
-                if (state is ProfileTodoLoadedState) {
-                  return ListView.builder(
-                    itemCount: state.todos.length,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      return ToDoTile(
-                        id: state.todos[index].id.toString(),
-                        title: state.todos[index].title ?? '',
-                        time: state.todos[index].dueOn ?? '',
-                        isDone: state.todos[index].status == 'completed',
-                      );
-                    },
-                  );
-                } else if (state is ProfileTodoLoadingState) {
-                  return const SizedBox(
-                    height: 150,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                } else if (state is ProfileTodoEmptyState) {
-                  return const SizedBox(
-                    height: 50,
-                    child: Center(child: Text('This user has no todos list')),
-                  );
-                } else if (state is ProfileTodoErrorState) {
-                  return Container();
-                } else {
-                  LogUtil.verbose('UserProfile: Unknown state');
-                  return Container();
-                }
-              },
-            ),
-          ],
-        ),
+                );
+              } else if (state is ProfilePostLoadingState) {
+                return const SizedBox(
+                  height: 150,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (state is ProfilePostEmptyState) {
+                return const SizedBox(
+                  height: 50,
+                  child: Center(child: Text('This user has no post')),
+                );
+              } else if (state is UserProfileErrorState) {
+                return Container();
+              } else {
+                LogUtil.verbose('User posts: Initial / Unknown state');
+                return Container();
+              }
+            },
+          ),
+          const SizedBox(height: 40),
+
+          /// USER TO-DO LISTS
+          const Text('USER TODO LIST'),
+          const SizedBox(height: 20),
+          BlocBuilder<UserTodoBloc, UserTodoState>(
+            bloc: userTodoBloc,
+            builder: (context, state) {
+              if (state is ProfileTodoLoadedState) {
+                return ListView.builder(
+                  itemCount: state.todos.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return ToDoTile(
+                      id: state.todos[index].id.toString(),
+                      title: state.todos[index].title ?? '',
+                      time: state.todos[index].dueOn ?? '',
+                      isDone: state.todos[index].status == 'completed',
+                    );
+                  },
+                );
+              } else if (state is ProfileTodoLoadingState) {
+                return const SizedBox(
+                  height: 150,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (state is ProfileTodoEmptyState) {
+                return const SizedBox(
+                  height: 50,
+                  child: Center(child: Text('This user has no todos list')),
+                );
+              } else if (state is ProfileTodoErrorState) {
+                return Container();
+              } else {
+                LogUtil.verbose('User To-do: Initial/Unknown state');
+                return Container();
+              }
+            },
+          ),
+        ],
       ),
     );
   }
 
   // edit dialog
   void _editDialog(BuildContext context, UserProfileBloc userProfileBloc, UserModel userModel) {
+    final GlobalKey<FormState> formKey = GlobalKey();
     final TextEditingController nameController = TextEditingController();
     final TextEditingController emailController = TextEditingController();
     final TextEditingController genderController = TextEditingController();
@@ -224,6 +244,7 @@ class UserProfile extends StatelessWidget {
       context: context,
       builder: (context) {
         return UserForm(
+          formKey: formKey,
           emailController: emailController,
           nameController: nameController,
           formLabel: 'Edit User',
@@ -239,9 +260,10 @@ class UserProfile extends StatelessWidget {
               status: statusController.text,
             );
             LogUtil.verbose(editedUser.toJson());
-
-            userProfileBloc.add(EditUserProfileEvent(editedUser));
-            Navigator.of(context).pop();
+            if (formKey.currentState!.validate()) {
+              userProfileBloc.add(EditUserProfileEvent(editedUser));
+              Navigator.of(context).pop();
+            }
           },
         );
       },
@@ -280,6 +302,36 @@ class UserProfile extends StatelessWidget {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  // edit dialog
+  void _createPostDialog(BuildContext context, UserPostBloc userPostBloc, UserModel userModel) {
+    final TextEditingController titleController = TextEditingController();
+    final TextEditingController bodyController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return PostForm(
+          formKey: formKey,
+          formLabel: 'Create Post',
+          titleController: titleController,
+          bodyController: bodyController,
+          onPressed: () {
+            PostModel postModel = PostModel(
+              userId: userModel.id,
+              title: titleController.text,
+              body: bodyController.text,
+            );
+            LogUtil.verbose(postModel.toJson());
+            if (formKey.currentState!.validate()) {
+              userPostBloc.add(ProfileCreatePostEvent(postModel));
+              Navigator.of(context).pop();
+            }
+          },
         );
       },
     );

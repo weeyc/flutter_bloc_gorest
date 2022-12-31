@@ -11,6 +11,7 @@ class UserPostBloc extends Bloc<UserPostEvent, UserPostState> {
   final PostRepository _postRepository;
   UserPostBloc(this._postRepository) : super(UserPostInitial()) {
     on<ProfilePostsFetchEvent>(_onProfilePostsFetchEvent);
+    on<ProfileCreatePostEvent>(_onProfileCreatePostEvent);
   }
 
   Future<void> _onProfilePostsFetchEvent(ProfilePostsFetchEvent event, Emitter<UserPostState> emit) async {
@@ -21,6 +22,22 @@ class UserPostBloc extends Bloc<UserPostEvent, UserPostState> {
           emit(ProfilePostLoadedState(posts));
         } else {
           emit(ProfilePostEmptyState());
+        }
+      });
+    } catch (e) {
+      emit(ProfilePostErrorState(e.toString()));
+    }
+  }
+
+  Future<void> _onProfileCreatePostEvent(ProfileCreatePostEvent event, Emitter<UserPostState> emit) async {
+    emit(ProfilePostLoadingState());
+    try {
+      await _postRepository.createUserPost(event.postModel).then((PostModel postCreated) async {
+        if (postCreated.id != null) {
+          emit(ProfilePostCreatedState(postCreated));
+          await _onProfilePostsFetchEvent(ProfilePostsFetchEvent(UserModel(id: event.postModel.userId)), emit);
+        } else {
+          emit(const ProfilePostErrorState('Failed to create post'));
         }
       });
     } catch (e) {

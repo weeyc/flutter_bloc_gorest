@@ -16,7 +16,7 @@ import 'package:go_rest_bloc/widgets/user_tiles.dart';
 class UserListScreen extends StatelessWidget {
   UserListScreen({Key? key}) : super(key: key);
   final TextEditingController searchController = TextEditingController();
-
+  final GlobalKey<FormState> _formKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
     UserBloc userBloc = BlocProvider.of<UserBloc>(context);
@@ -178,6 +178,7 @@ class UserListScreen extends StatelessWidget {
       context: context,
       builder: (context) {
         return UserForm(
+          formKey: _formKey,
           isEditing: false,
           emailController: emailController,
           nameController: nameController,
@@ -191,9 +192,12 @@ class UserListScreen extends StatelessWidget {
               email: emailController.text,
               status: statusController.text,
             );
-            LogUtil.verbose(userModel.toJson());
-            userBloc.add(UserAddEvent(userModel));
-            Navigator.of(context).pop();
+            //validate form
+            if (_formKey.currentState!.validate()) {
+              LogUtil.verbose(userModel.toJson());
+              userBloc.add(UserAddEvent(userModel));
+              Navigator.of(context).pop();
+            }
           },
         );
       },
